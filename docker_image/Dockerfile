@@ -11,6 +11,6 @@ WORKDIR /filler/solution/xdd
 
 RUN cargo build --release
 
-WORKDIR /filler/
+WORKDIR /filler/solution
 
 ENTRYPOINT /bin/bash
