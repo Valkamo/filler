@@ -7,23 +7,37 @@ fn main() {
 
     // Check if player_info contains "Answer" to skip printing it
     if !player_info.contains("Answer") {
-        println!("{}", player_info.trim()); // Printing player info (optional)
+        // println!("{}", player_info.trim()); // Printing player info (optional)
     }
 
-    // Read piece information
-    let mut piece_info = String::new();
+    // Skip the first row with x coordinates
+    let mut x_coordinates = String::new();
+    io::stdin().read_line(&mut x_coordinates).expect("Failed to read x coordinates");
 
-    // Read lines until an empty line is encountered
-    while io::stdin().read_line(&mut piece_info).expect("Failed to read piece info") > 0 {
-        if piece_info.trim().is_empty() {
-            println!("Empty line encountered, breaking out of the loop");
-            // Break out of the loop when an empty line is encountered
-            break;
+    // Read Anfield into a 2D vector, skipping first row and column
+    let mut anfield = vec![];
+    for i in 0..15 {
+        let mut line = String::new();
+        io::stdin().read_line(&mut line).expect("Failed to read Anfield line");
+        // Skip the three characters in each line, which contain the numbers and spaces
+        let row: Vec<String> = line
+            .trim()
+            .chars()
+            .skip(3)
+            .filter(|&c| c != ' ')
+            .map(|c| c.to_string())
+            .collect();
+        anfield.push(row);
+    }
+
+    // Find the position of '@' on the Anfield
+    if
+        let Some(row) = anfield
+            .iter()
+            .position(|line| !line.is_empty() && line.join("").contains("@"))
+    {
+        if let Some(column) = anfield[row].iter().position(|c| c == "@") {
+            println!("Found '@' at position: ({}, {})", column, row - 1);
         }
-
-        // Print the current line of the piece information
-        println!("{}", piece_info.trim());
-
-        piece_info.clear(); // Clear the string for the next iteration
     }
 }
