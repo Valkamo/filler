@@ -1,26 +1,23 @@
 use std::io;
-use std::fs::OpenOptions;
+// use std::fs::OpenOptions;
 use std::io::Write;
 use std::io::BufRead;
 
 fn main() {
     let stdin = io::stdin();
-    let mut file = OpenOptions::new().read(true).write(true).create(true).open("xd.log").unwrap();
+    // let mut file = OpenOptions::new().read(true).write(true).create(true).open("xd.log").unwrap();
     let mut anfield: Vec<Vec<char>> = Vec::new();
     let mut piece: Vec<Vec<char>> = Vec::new();
-
-    // writeln!(file, "xddd").expect("Failed to write to file");
 
     let mut lines = stdin.lock().lines();
     loop {
         while let Some(result) = lines.next() {
             let line = result.expect("Failed to read line");
-            // writeln!(file, "{}", line).expect("Failed to write to file");
 
             if line.starts_with("$$$") {
                 let p_parts: Vec<&str> = line.split_whitespace().collect();
                 let player: String = p_parts[2].parse().expect("Failed to parse player");
-                writeln!(file, "player: {}", player).expect("Failed to write to file");
+                // writeln!(file, "player: {}", player).expect("Failed to write to file");
             }
 
             if line.starts_with("Anfield") {
@@ -30,10 +27,6 @@ fn main() {
                     .trim_end_matches(':')
                     .parse()
                     .expect("Failed to parse height");
-
-                writeln!(file, "anfield width: {}, height: {}", an_width, an_height).expect(
-                    "Failed to write to file"
-                );
 
                 // Skip the next line which only has the numbers
                 let _ = lines.next().expect("Failed to skip numbers line");
@@ -45,11 +38,6 @@ fn main() {
                         anfield.push(chars);
                     }
                 }
-
-                for row in &anfield {
-                    let row_str: String = row.iter().collect();
-                    writeln!(file, "{}", row_str).expect("Failed to write to file");
-                }
             }
 
             if line.starts_with("Piece") {
@@ -60,10 +48,6 @@ fn main() {
                     .parse()
                     .expect("Failed to parse height");
 
-                writeln!(file, "Piece width: {}, height: {}", width, height).expect(
-                    "Failed to write to file"
-                );
-
                 for _ in 0..height {
                     if let Some(piece_line_result) = lines.next() {
                         let piece_line = piece_line_result.expect("Failed to read piece line");
@@ -72,27 +56,68 @@ fn main() {
                     }
                 }
 
-                // Optionally, print the piece to the log file to verify
-                for row in &piece {
-                    let row_str: String = row.iter().collect();
-                    writeln!(file, "{}", row_str).expect("Failed to write to file");
-                }
+                // let position = place_piece_on_board(&anfield, &piece);
+                // if let Some((y, x)) = position {
+                //     // writeln!(file, "Printing!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {} {}", x, y).expect(
+                //     //     "Failed to write to file"
+                //     // );
+                //     println!("{} {}", x, y);
+                //     io::stdout().flush().unwrap();
+                //     // clear the piece and anfield
+                //     piece.clear();
+                //     anfield.clear();
+                // } else {
+                //     // writeln!(file, "Printing 0 0").expect("Failed to write to file");
+                //     println!("0 0");
+                //     io::stdout().flush().unwrap();
+                //     // clear the piece and anfield
+                //     piece.clear();
+                //     anfield.clear();
+                // }
 
-                let position = place_piece_on_board(&anfield, &piece);
-                if let Some((y, x)) = position {
-                    writeln!(file, "Printing!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {} {}", x, y).expect(
-                        "Failed to write to file"
-                    );
-                    println!("{} {}", x, y);
+                let valid_positions = place_piece_on_board(&anfield, &piece);
+                let enemy_positions: Vec<_> = anfield
+                    .iter()
+                    .enumerate()
+                    .flat_map(|(i, row)| {
+                        row.iter()
+                            .enumerate()
+                            .filter(|&(_, &ch)| (ch == '$' || ch == 's'))
+                            .map(move |(j, _)| (i, j))
+                    })
+                    .collect();
+
+                if !valid_positions.is_empty() {
+                    let (chosen_x, chosen_y) = valid_positions
+                        .into_iter()
+                        .min_by(|&(x1, y1), &(x2, y2)| {
+                            let min_distance1 = enemy_positions
+                                .iter()
+                                .map(|&(ex, ey)| distance(x1, y1, ex, ey))
+                                .min_by(|&a, &b|
+                                    a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal)
+                                )
+                                .unwrap_or(f64::INFINITY);
+                            let min_distance2 = enemy_positions
+                                .iter()
+                                .map(|&(ex, ey)| distance(x2, y2, ex, ey))
+                                .min_by(|&a, &b|
+                                    a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal)
+                                )
+                                .unwrap_or(f64::INFINITY);
+                            min_distance1
+                                .partial_cmp(&min_distance2)
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                        .unwrap();
+
+                    println!("{} {}", chosen_y, chosen_x); // Note: swapped x and y as per your original print order
                     io::stdout().flush().unwrap();
-                    // clear the piece and anfield
                     piece.clear();
                     anfield.clear();
                 } else {
-                    writeln!(file, "Printing 0 0").expect("Failed to write to file");
                     println!("0 0");
                     io::stdout().flush().unwrap();
-                    // clear the piece and anfield
                     piece.clear();
                     anfield.clear();
                 }
@@ -102,13 +127,13 @@ fn main() {
 }
 
 fn can_place_piece(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>, x: usize, y: usize) -> bool {
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .append(true)
-        .open("xddd.log")
-        .unwrap();
+    // let mut file = OpenOptions::new()
+    //     .read(true)
+    //     .write(true)
+    //     .create(true)
+    //     .append(true)
+    //     .open("xddd.log")
+    //     .unwrap();
     let mut overlap_count = 0;
 
     for i in 0..piece.len() {
@@ -120,9 +145,9 @@ fn can_place_piece(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>, x: usize, y: 
             if board_x >= board.len() || board_y >= board[0].len() {
                 if piece[i][j] != '.' {
                     // Only consider non-dot parts of the piece for boundary checks
-                    writeln!(file, "boundary check failed x: {}, y:{}", x, y).expect(
-                        "Failed to write to file"
-                    );
+                    // writeln!(file, "boundary check failed x: {}, y:{}", x, y).expect(
+                    //     "Failed to write to file"
+                    // );
                     return false;
                 }
                 continue;
@@ -133,9 +158,9 @@ fn can_place_piece(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>, x: usize, y: 
                 piece[i][j] != '.' &&
                 (board[board_x][board_y] == '$' || board[board_x][board_y] == 's')
             {
-                writeln!(file, "overlap with enemy x: {}, y:{}", x, y).expect(
-                    "Failed to write to file"
-                );
+                // writeln!(file, "overlap with enemy x: {}, y:{}", x, y).expect(
+                //     "Failed to write to file"
+                // );
                 return false;
             }
 
@@ -144,36 +169,52 @@ fn can_place_piece(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>, x: usize, y: 
                 piece[i][j] != '.' &&
                 (board[board_x][board_y] == '@' || board[board_x][board_y] == 'a')
             {
-                writeln!(file, "overlap x: {}, y:{}", x, y).expect("Failed to write to file");
+                // writeln!(file, "overlap x: {}, y:{}", x, y).expect("Failed to write to file");
                 overlap_count += 1;
             }
         }
     }
 
-    writeln!(file, "overlap_count: {}, x: {}, y: {}", overlap_count, x, y).expect(
-        "Failed to write to file"
-    );
+    // writeln!(file, "overlap_count: {}, x: {}, y: {}", overlap_count, x, y).expect(
+    //     "Failed to write to file"
+    // );
 
     overlap_count == 1
 }
 
-fn place_piece_on_board(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>) -> Option<(usize, usize)> {
-    let mut file = OpenOptions::new().read(true).write(true).create(true).open("xdd.log").unwrap();
-    writeln!(file, "place_piece_on_board").expect("Failed to write to file");
+// fn place_piece_on_board(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>) -> Option<(usize, usize)> {
+//     // let mut file = OpenOptions::new().read(true).write(true).create(true).open("xdd.log").unwrap();
+//     // writeln!(file, "place_piece_on_board").expect("Failed to write to file");
+//     for x in 0..board.len() {
+//         for y in 0..board[0].len() {
+//             // writeln!(file, "testing x: {}, y: {}", x, y).expect("Failed to write to file");
+//             if can_place_piece(&board, &piece, x, y) {
+//                 // writeln!(file, "can_place_piece").expect("Failed to write to file");
+//                 // Place the piece on the board at (x, y)
+//                 return Some((x, y));
+//             }
+//         }
+//     }
+//     // writeln!(file, "cannot_place_piece").expect("Failed to write to file");
+//     None
+// }
+
+fn place_piece_on_board(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>) -> Vec<(usize, usize)> {
+    let mut valid_positions = Vec::new();
+
     for x in 0..board.len() {
         for y in 0..board[0].len() {
-            if board[x][y] == '@' {
-                writeln!(file, "board x: {}, y: {} on @", x, y).expect("Failed to write to file");
-            }
-            // write the coordinates to the log file
-            writeln!(file, "testing x: {}, y: {}", x, y).expect("Failed to write to file");
             if can_place_piece(&board, &piece, x, y) {
-                writeln!(file, "can_place_piece").expect("Failed to write to file");
-                // Place the piece on the board at (x, y)
-                return Some((x, y));
+                valid_positions.push((x, y));
             }
         }
     }
-    writeln!(file, "cannot_place_piece").expect("Failed to write to file");
-    None
+
+    valid_positions
+}
+
+fn distance(x1: usize, y1: usize, x2: usize, y2: usize) -> f64 {
+    let dx = (x2 as f64) - (x1 as f64);
+    let dy = (y2 as f64) - (y1 as f64);
+    (dx * dx + dy * dy).sqrt()
 }
