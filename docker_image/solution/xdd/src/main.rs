@@ -21,7 +21,6 @@ fn main() {
 
             if line.starts_with("Anfield") {
                 let an_parts: Vec<&str> = line.split_whitespace().collect();
-                let an_width: usize = an_parts[1].parse().expect("Failed to parse width");
                 let an_height: usize = an_parts[2]
                     .trim_end_matches(':')
                     .parse()
@@ -41,7 +40,6 @@ fn main() {
 
             if line.starts_with("Piece") {
                 let parts: Vec<&str> = line.split_whitespace().collect();
-                let width: usize = parts[1].parse().expect("Failed to parse width");
                 let height: usize = parts[2]
                     .trim_end_matches(':')
                     .parse()
@@ -55,8 +53,8 @@ fn main() {
                     }
                 }
 
-                let mut enemy = char::default();
-                let mut enemy2 = char::default();
+                let enemy: char;
+                let enemy2: char;
                 if p == "p1" {
                     enemy = 's';
                     enemy2 = '$';
@@ -168,10 +166,10 @@ fn place_piece_on_board(
     piece: &Vec<Vec<char>>,
     player: &String
 ) -> Vec<(usize, usize)> {
-    let mut enemy = char::default();
-    let mut enemy2 = char::default();
-    let mut p1 = char::default();
-    let mut p2 = char::default();
+    let enemy: char;
+    let enemy2: char;
+    let p1: char;
+    let p2: char;
     let mut valid_positions = Vec::new();
 
     if player == "p1" {
