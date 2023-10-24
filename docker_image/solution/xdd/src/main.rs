@@ -90,8 +90,8 @@ fn main() {
                     anfield.clear();
                 } else {
                     writeln!(file, "Printing 0 0").expect("Failed to write to file");
-                    // println!("0 0");
-                    // io::stdout().flush().unwrap();
+                    println!("0 0");
+                    io::stdout().flush().unwrap();
                     // clear the piece and anfield
                     piece.clear();
                     anfield.clear();
@@ -126,6 +126,17 @@ fn can_place_piece(board: &Vec<Vec<char>>, piece: &Vec<Vec<char>>, x: usize, y: 
                     return false;
                 }
                 continue;
+            }
+
+            // overlap with enemy check
+            if
+                piece[i][j] != '.' &&
+                (board[board_x][board_y] == '$' || board[board_x][board_y] == 's')
+            {
+                writeln!(file, "overlap with enemy x: {}, y:{}", x, y).expect(
+                    "Failed to write to file"
+                );
+                return false;
             }
 
             // Connection check
